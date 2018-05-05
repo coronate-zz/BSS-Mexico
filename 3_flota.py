@@ -7,7 +7,7 @@ import numpy as np
 import operator
 import copy
 from tqdm import tqdm
-
+import time
 
 class Map(object):
     def __init__(self, num_estaciones, num_estados):
@@ -66,7 +66,7 @@ class Map(object):
                 else:
                     #There is an other station with better performance un car.subsystem
                     car.subsystem_list.remove(av_st)
-            print("New station inserted on car {} subsystem => {}".format( car.id_car, av_st_min ))
+            #print("New station inserted on car {} subsystem => {}".format( car.id_car, av_st_min ))
         else:
             print("There isn't any available_station in Fleet")
             #TO DO: In this part we can take the second worst cart and take the 
@@ -126,6 +126,12 @@ class Fleet(object):
 
         #TO DO: Delete print and print-commented
         """
+        #Reset asignation
+        for i in self.fleet:
+            car = self.fleet[i]
+            car.subsystem = pd.DataFrame()
+            car.subsystem_list = list()
+
         for i in range(AREA_SIZE): #number of statitions assigned to each car
             #print("---------------------------NEXT AREA--------------------------------".format(i))
             for j in random.sample(self.fleet.keys(), len(self.fleet.keys())): #car are selected randomly
@@ -153,7 +159,7 @@ class Fleet(object):
                 else:
                     print("Not available stations for car \n{} ".format(j))
 
-        print("END Area assignation")
+        #print("END Area assignation")
 
 
     def solve_subsystems(self, MAP):
@@ -233,12 +239,14 @@ class Car(object):
         subsystem =  self.subsystem
         most_expensive_station_cost = 0 
         for col in subsystem.columns:
-            sum_station = subsystem[col].replace("X", 0 ).sum()
+            sum_station_col = subsystem[col].replace("X", 0 ).sum()
+            sum_station_index = subsystem.loc[col].replace("X", 0 ).sum()
+            sum_station =  sum_station_col + sum_station_index 
             if most_expensive_station_cost < sum_station:
                 most_expensive_station_cost = sum_station
                 most_expensive_station = col
 
-        print("Most expensive station for car {}\n\t Station:{}\n\t Cost: {} ".format(self.id_car, most_expensive_station, most_expensive_station_cost))
+        #print("Most expensive station for car {}\n\t Station:{}\n\t Cost: {} ".format(self.id_car, most_expensive_station, most_expensive_station_cost))
         return most_expensive_station
 
 

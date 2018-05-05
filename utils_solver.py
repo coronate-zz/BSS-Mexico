@@ -8,7 +8,140 @@ import numpy as np
 import random
 import itertools
 import sys
+import copy
+from tqdm import tqdm
 
+def save_obj(obj, name ):
+    with open('diccionarios/'+ name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+def load_obj(name ):
+    with open('diccionarios/' + name + '.pkl', 'rb') as f:
+        return pickle.load(f)
+
+def subsytem_distribution_iterativeOptimization(N_ITERATION,FLEET, MAP):
+    FLEET_SECONDARY = copy.deepcopy(FLEET)
+    MIN_COST = 10000000
+    firstIteration =  True
+    for i in  tqdm(range(N_ITERATION), ascii= True, desc = "Iterative optimization"): 
+        if firstIteration:
+            start_cost = FLEET.accumalated_cost
+            firstIteration = False
+        #This part change for optimization
+        FLEET_SECONDARY.assignArea(MAP)                #Assign subsystem to each car
+        FLEET_SECONDARY.solve_subsystems(MAP)
+        if FLEET_SECONDARY.accumalated_cost < MIN_COST:
+            FLEET_MIN = copy.deepcopy(FLEET_SECONDARY)
+            MIN_COST = FLEET_MIN.accumalated_cost
+            print("New min cost {}".format(MIN_COST))
+
+    print("The subsystem distribution was optimized:\n\t Initial Cost: {} \n\t Final Cost: {}".format(start_cost, FLEET_MIN.accumalated_cost))
+
+    return MIN_COST, FLEET_MIN 
+
+
+def subsystem_distribution_iterativeGradientOptimization(N_ITERATION,FLEET, MAP):
+    FLEET_MIN = copy.deepcopy(FLEET)
+    MIN_COST_ITERATION = 10000000
+    firstIteration =  True
+    for i in  tqdm(range(N_ITERATION), ascii= True, desc = "Iterative optimization"): 
+        stillChange = True
+        stillChange = True
+        firstIteration = True
+        FLEET_SECONDARY = copy.deepcopy(FLEET)
+        FLEET_SECONDARY.assignArea(MAP)               
+        FLEET_SECONDARY.solve_subsystems(MAP)
+        cont = 0
+
+        while stillChange:
+            if firstIteration:
+                start_cost = FLEET_SECONDARY.accumalated_cost
+                print("START COST: " + str(start_cost))
+                firstIteration =  False
+
+            FLEET_SECONDARY.set_cost_distribution()
+            cost_fleet = FLEET_SECONDARY.cost_distribution
+            most_expensive_car = cost_fleet.head(1).index[0] #Id of car with the route with more cost.
+            most_expensive_car = FLEET_SECONDARY.fleet[most_expensive_car]
+
+            most_expensive_station = most_expensive_car.get_mostExpensive_station()
+            most_expensive_car.subsystem_list.remove(most_expensive_station)
+            most_expensive_car.set_subsystem(MAP)
+
+            MAP.update_available_stations(FLEET_SECONDARY)
+            MAP.change_station(most_expensive_car, MAP) #this function must change the worst station for car i to another station
+            
+            FLEET_SECONDARY.solve_subsystems(MAP)
+            if FLEET_SECONDARY.accumalated_cost < FLEET.accumalated_cost:
+                FLEET = copy.deepcopy(FLEET_SECONDARY)
+                stillChange =  True
+                cont = 0
+                #print("New FLEET_MIN cost: {}".format(FLEET.accumalated_cost))
+            else:
+                if cont >= 10:
+                    stillChange = False 
+                else:
+                    cont += 1
+        FLEET_MIN = copy.deepcopy(FLEET_SECONDARY)
+        MIN_COST =  FLEET_MIN.accumalated_cost
+        print("The subsystem distribution was optimized:\n\t Initial Cost: {} \n\t Final Cost: {}".format(start_cost, MIN_COST))
+
+        if FLEET_MIN.accumalated_cost < MIN_COST_ITERATION:
+            FLEET_MIN_ITERATION = copy.deepcopy(FLEET)
+            MIN_COST_ITERATION = FLEET_MIN_ITERATION.accumalated_cost
+            print("New min cost {}".format(MIN_COST_ITERATION))
+    return MIN_COST_ITERATION, FLEET_MIN_ITERATION
+
+
+def subsystem_distribution_gradientOptimization(FLEET, MAP):
+    """We know the first element in cost_fleet dictionary is the car incurring in more cost. 
+    We will change this car distribution chnaging the station with the higher avg cost
+    for an other station in the available_stations list.
+    if the available_stations list is empty then we will change with the
+    the highest avg cost station of the  second element
+    in dictionary (second most expensive car). 
+    """
+    stillChange = True
+    firstIteration = True
+    FLEET_SECONDARY = copy.deepcopy(FLEET)
+    FLEET_SECONDARY.assignArea(MAP)               
+    FLEET_SECONDARY.solve_subsystems(MAP)
+    cont = 0
+
+    while stillChange:
+        if firstIteration:
+            start_cost = FLEET_SECONDARY.accumalated_cost
+            print("START COST: " + str(start_cost))
+            firstIteration =  False
+
+        FLEET_SECONDARY.set_cost_distribution()
+        cost_fleet = FLEET_SECONDARY.cost_distribution
+        most_expensive_car = cost_fleet.head(1).index[0] #Id of car with the route with more cost.
+        most_expensive_car = FLEET_SECONDARY.fleet[most_expensive_car]
+
+        most_expensive_station = most_expensive_car.get_mostExpensive_station()
+        most_expensive_car.subsystem_list.remove(most_expensive_station)
+        most_expensive_car.set_subsystem(MAP)
+
+        MAP.update_available_stations(FLEET_SECONDARY)
+        MAP.change_station(most_expensive_car, MAP) #this function must change the worst station for car i to another station
+        
+        FLEET_SECONDARY.solve_subsystems(MAP)
+        if FLEET_SECONDARY.accumalated_cost < FLEET.accumalated_cost:
+            FLEET = copy.deepcopy(FLEET_SECONDARY)
+            stillChange =  True
+            cont = 0
+            print("New FLEET_MIN cost: {}".format(FLEET.accumalated_cost))
+        else:
+            if cont >= 10:
+                stillChange = False 
+            else:
+                cont += 1
+    FLEET_MIN = FLEET
+    MIN_COST =  FLEET_MIN.accumalated_cost
+    print("The subsystem distribution was optimized:\n\t Initial Cost: {} \n\t Final Cost: {}".format(start_cost, MIN_COST))
+
+    return MIN_COST, FLEET_MIN 
 
 def mapaAleatorio( N_STATIONS, N_STATES ): 
     #print("-------CREACION DE LISTA CON NOMBRES ESTACION---------")
