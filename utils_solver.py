@@ -10,6 +10,7 @@ import itertools
 import sys
 import copy
 from tqdm import tqdm
+import pickle
 
 def save_obj(obj, name ):
     with open('diccionarios/'+ name + '.pkl', 'wb') as f:

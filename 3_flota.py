@@ -81,13 +81,14 @@ class Fleet(object):
     This class cointain all the vehicles that perform that allocate the bycles to
     each station.
     """
-    global MAX_COBERTURE, AREA_SIZE
 
-    def __init__(self):
+    def __init__(self, AREA_SIZE, MAX_COBERTURE):
         self.fleet = dict()
         self.accumalated_cost = 0
         self.positions = list()
         self.cost_distribution = dict()
+        self.AREA_SIZE = AREA_SIZE
+        self.MAX_COBERTURE = MAX_COBERTURE
 
     def insertCar (self,car):
         self.fleet[car.id_car] = car
@@ -132,7 +133,7 @@ class Fleet(object):
             car.subsystem = pd.DataFrame()
             car.subsystem_list = list()
 
-        for i in range(AREA_SIZE): #number of statitions assigned to each car
+        for i in range(self.AREA_SIZE): #number of statitions assigned to each car
             #print("---------------------------NEXT AREA--------------------------------".format(i))
             for j in random.sample(self.fleet.keys(), len(self.fleet.keys())): #car are selected randomly
                 #print("----------------------------FLEET KEY------------------------------".format(j))
@@ -145,7 +146,6 @@ class Fleet(object):
                 car_stations_weights = self.car_cost(car, car_stations) #for this particular car how expensive is to travel from it's possition to all available stations
                 car.set_stations_weight( car_stations_weights )
                 #print("TEST 1.1:  \n{}".format(car_stations_weights))
-
                 car_possible_area = car_stations_weights[car_stations_weights <= MAX_COBERTURE]
                 #print("TEST 2:  \n{}".format(car_possible_area))
 
@@ -182,7 +182,7 @@ class Fleet(object):
             self.accumalated_cost += cost
 
 
-    def car_cost(self,car,car_stations, ):
+    def car_cost(self,car,car_stations):
         """
         This function user the Car information to upadate the cost
         for a paricular car C to travel to station J. Taking into account 
@@ -268,7 +268,7 @@ import utils_solver
 
 
 MAP = Map(N_STATIONS, N_STATES)
-FLEET = Fleet()
+FLEET = Fleet(AREA_SIZE, MAX_COBERTURE)
 # We assign a random station for each car
 car_position = random.sample( list(MAP.weights.columns) , N_CARS)
 
