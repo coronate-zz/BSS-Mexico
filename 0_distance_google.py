@@ -7,7 +7,6 @@ MODE = WALKING, la desicion de consumo cambia dependiendo de la distancia en car
 transit_routing_preference: LESS WALKING, asumimos que la gente es floja
 results =gmaps.distance_matrix( origins =  originCordenadas , destinations =  destinationsCordenadas, mode = "walking", transit_routing_preference= "less_walking" )
 
-
 """
 import googlemaps
 import pandas as pd
@@ -17,36 +16,34 @@ gmaps = googlemaps.Client(key='AIzaSyDnT4Mu6Pf9gi2ZbWkBOLTbzJPo8njqAeA')
 gmaps = googlemaps.Client(key='AIzaSyAFwWe_JFT7NDbW280Wrm8z1PjVtMYdYlQ')
 
 
-dataCordenadas = pd.read_csv("cordenadas.csv", encoding='utf-16')
+dataCordenadas = pd.read_csv("coordenadas.csv", encoding='utf-16')
 dataCordenadas = dataCordenadas.reset_index()
 dataCordenadas = dataCordenadas[["ID", "Latitud", "Longitud"]]
 dataCordenadas["Latitud"] = dataCordenadas["Latitud"].apply(str)
 dataCordenadas["Longitud"] = dataCordenadas["Longitud"].apply(str)
 dataCordenadas["cordenadas"] = dataCordenadas[['Latitud', 'Longitud']].apply(lambda x: ' , '.join(x), axis=1)
 
-
 #dataDistaces = pd.DataFrame( index=dataCordenadas["ID"] , columns= dataCordenadas["ID"])
 #dataDuration = pd.DataFrame( index=dataCordenadas["ID"] , columns= dataCordenadas["ID"])
 #dataStatus   = pd.DataFrame( index=dataCordenadas["ID"] , columns= dataCordenadas["ID"])
-
 
 dataStatus   = pd.read_csv( "dataStatus.csv")
 dataDuration = pd.read_csv( "dataDuration.csv")
 dataDistaces = pd.read_csv( "dataDistaces.csv")
 
+#dataStatus   = pd.DataFrame( columns = dataCordenadas.ID , index = dataCordenadas.ID)
+#dataDuration = pd.DataFrame( columns = dataCordenadas.ID , index = dataCordenadas.ID)
+#dataDistaces = pd.DataFrame( columns = dataCordenadas.ID , index = dataCordenadas.ID)
+
 #dataDistaces_directions = pd.DataFrame( index=results["origin_addresses"] , columns= dataCordenadas["origin_addresses"])
 #dataDuration_directions = pd.DataFrame( index=results["origin_addresses"] , columns= dataCordenadas["origin_addresses"])
 #dataStatus_directions   = pd.DataFrame( index=results["origin_addresses"] , columns= dataCordenadas["origin_addresses"])
-
-
 
 #Como el API no puede descargar mas de cierta cantidad de direcciones al mismo tiempo vamos a limitar el
 #numero de solicitudes de 100 en 100 
 totalFilas = len(dataCordenadas["ID"])
 totalColumnas = totalFilas 
-filaProcesando = 332
-
-
+filaProcesando = 0
 
 while filaProcesando < totalFilas:
 	print( "PROCESANDO FILA " + str( filaProcesando))
@@ -100,11 +97,11 @@ while filaProcesando < totalFilas:
 
 	#END WHILE
 	filaProcesando +=1
+	dataStatus.to_csv  ( "dataStatus.csv")
+	dataDuration.to_csv( "dataDuration.csv")
+	dataDistaces.to_csv( "dataDistaces.csv")
 
 
 
 
 
-dataStatus.to_csv  ( "dataStatus.csv")
-dataDuration.to_csv( "dataDuration.csv")
-dataDistaces.to_csv( "dataDistaces.csv")

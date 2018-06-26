@@ -48,9 +48,9 @@ import utils_solver
 
 #n_estados = [5, 7, 8, 10] 
 #n_subsystems= [5, 7 8,10]
-n_estados    = [5]
-n_subsystems = [5]
-N_ESTACIONES = 444
+n_estados    = [5, 7, 10]
+n_subsystems = [5, 10, 15, 20]
+N_STATIONS = 444
 SCORES = dict()
 estado = 100000
 SECUENTIAL_ITERATIONS = 2
@@ -150,6 +150,7 @@ for estado in tqdm(n_estados, ascii= True, desc= "GRADIENT TEST"):
             if SCORES[estado][area]["gradient_model"]["max_time"] < execution_time:
                 SCORES[estado][area]["gradient_model"]["max_time"] = execution_time
 
+utils_solver.save_obj(SCORES, 'SCORES_optimization')
 
 
 
@@ -208,6 +209,7 @@ for estado in tqdm(n_estados, ascii= True, desc= "ITERATION TEST"):
                 SCORES[estado][area]["iteration_model"]["max_time"] = execution_time
 
 
+utils_solver.save_obj(SCORES, 'SCORES_optimization')
 
 
 for estado in tqdm(n_estados, ascii= True, desc= "ITERATION + GRADIENT TEST"):
@@ -275,3 +277,4 @@ for estado in tqdm(n_estados, ascii= True, desc= "ITERATION + GRADIENT TEST"):
 
 
 utils_solver.save_obj(SCORES, 'SCORES_optimization')
+    

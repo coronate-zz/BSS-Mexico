@@ -7,10 +7,12 @@ import pandas as pd
 import numpy as np 
 import random
 import itertools
-import sys
 import copy
 from tqdm import tqdm
 import pickle
+
+tqdm.monitor_interval = 0
+
 
 def save_obj(obj, name ):
     with open('diccionarios/'+ name + '.pkl', 'wb') as f:
@@ -20,7 +22,12 @@ def load_obj(name ):
     with open('diccionarios/' + name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-def subsytem_distribution_iterativeOptimization(N_ITERATION,FLEET, MAP):
+def subsytem_distribution_iterativeOptimization(N_ITERATION,FLEET, MAP, SOLUCIONES):
+    """
+    This fucntions works as follows:
+        First it takes the fleet passed by the user. 
+    """
+    FLEET.solve_subsystems(MAP, SOLUCIONES)
     FLEET_SECONDARY = copy.deepcopy(FLEET)
     MIN_COST = 10000000
     firstIteration =  True
@@ -30,7 +37,7 @@ def subsytem_distribution_iterativeOptimization(N_ITERATION,FLEET, MAP):
             firstIteration = False
         #This part change for optimization
         FLEET_SECONDARY.assignArea(MAP)                #Assign subsystem to each car
-        FLEET_SECONDARY.solve_subsystems(MAP)
+        FLEET_SECONDARY.solve_subsystems(MAP, SOLUCIONES)
         if FLEET_SECONDARY.accumalated_cost < MIN_COST:
             FLEET_MIN = copy.deepcopy(FLEET_SECONDARY)
             MIN_COST = FLEET_MIN.accumalated_cost
@@ -41,7 +48,8 @@ def subsytem_distribution_iterativeOptimization(N_ITERATION,FLEET, MAP):
     return MIN_COST, FLEET_MIN 
 
 
-def subsystem_distribution_iterativeGradientOptimization(N_ITERATION,FLEET, MAP):
+def subsystem_distribution_iterativeGradientOptimization(N_ITERATION,FLEET, MAP, SOLUCIONES):
+    FLEET.solve_subsystems(MAP, SOLUCIONES)
     FLEET_MIN = copy.deepcopy(FLEET)
     MIN_COST_ITERATION = 10000000
     firstIteration =  True
@@ -51,13 +59,14 @@ def subsystem_distribution_iterativeGradientOptimization(N_ITERATION,FLEET, MAP)
         firstIteration = True
         FLEET_SECONDARY = copy.deepcopy(FLEET)
         FLEET_SECONDARY.assignArea(MAP)               
-        FLEET_SECONDARY.solve_subsystems(MAP)
+        FLEET_SECONDARY.solve_subsystems(MAP, SOLUCIONES)
         cont = 0
 
         while stillChange:
+            print("Distribution optimization: {} of max 10".format(cont))
             if firstIteration:
                 start_cost = FLEET_SECONDARY.accumalated_cost
-                print("START COST: " + str(start_cost))
+                #print("START COST: " + str(start_cost))
                 firstIteration =  False
 
             FLEET_SECONDARY.set_cost_distribution()
@@ -70,9 +79,9 @@ def subsystem_distribution_iterativeGradientOptimization(N_ITERATION,FLEET, MAP)
             most_expensive_car.set_subsystem(MAP)
 
             MAP.update_available_stations(FLEET_SECONDARY)
-            MAP.change_station(most_expensive_car, MAP) #this function must change the worst station for car i to another station
+            MAP.change_station(most_expensive_car, MAP) #this function must change the worst station for most_expensive_car to another station
             
-            FLEET_SECONDARY.solve_subsystems(MAP)
+            FLEET_SECONDARY.solve_subsystems(MAP, SOLUCIONES)
             if FLEET_SECONDARY.accumalated_cost < FLEET.accumalated_cost:
                 FLEET = copy.deepcopy(FLEET_SECONDARY)
                 stillChange =  True
@@ -94,7 +103,7 @@ def subsystem_distribution_iterativeGradientOptimization(N_ITERATION,FLEET, MAP)
     return MIN_COST_ITERATION, FLEET_MIN_ITERATION
 
 
-def subsystem_distribution_gradientOptimization(FLEET, MAP):
+def subsystem_distribution_gradientOptimization(FLEET, MAP, SOLUCIONES):
     """We know the first element in cost_fleet dictionary is the car incurring in more cost. 
     We will change this car distribution chnaging the station with the higher avg cost
     for an other station in the available_stations list.
@@ -104,15 +113,17 @@ def subsystem_distribution_gradientOptimization(FLEET, MAP):
     """
     stillChange = True
     firstIteration = True
+    FLEET.solve_subsystems(MAP, SOLUCIONES)
     FLEET_SECONDARY = copy.deepcopy(FLEET)
     FLEET_SECONDARY.assignArea(MAP)               
-    FLEET_SECONDARY.solve_subsystems(MAP)
+    FLEET_SECONDARY.solve_subsystems(MAP, SOLUCIONES)
     cont = 0
 
     while stillChange:
+        print("Distribution optimization: {} of max 10".format(cont))
         if firstIteration:
             start_cost = FLEET_SECONDARY.accumalated_cost
-            print("START COST: " + str(start_cost))
+            #print("START COST: " + str(start_cost))
             firstIteration =  False
 
         FLEET_SECONDARY.set_cost_distribution()
@@ -127,12 +138,12 @@ def subsystem_distribution_gradientOptimization(FLEET, MAP):
         MAP.update_available_stations(FLEET_SECONDARY)
         MAP.change_station(most_expensive_car, MAP) #this function must change the worst station for car i to another station
         
-        FLEET_SECONDARY.solve_subsystems(MAP)
+        FLEET_SECONDARY.solve_subsystems(MAP, SOLUCIONES)
         if FLEET_SECONDARY.accumalated_cost < FLEET.accumalated_cost:
             FLEET = copy.deepcopy(FLEET_SECONDARY)
             stillChange =  True
             cont = 0
-            print("New FLEET_MIN cost: {}".format(FLEET.accumalated_cost))
+            #print("New FLEET_MIN cost: {}".format(FLEET.accumalated_cost))
         else:
             if cont >= 10:
                 stillChange = False 
@@ -262,6 +273,7 @@ def getEquivalentSystem(code):
     [5][X][6]
     [3][4][X]
     """
+    #print( "\n\ngetEquivalentSystem: {} ".format(code))
     equivalentSystems = list()
     #first row and column are fixed beacause the starting poitn must be always the same
     ncol = int(np.sqrt(len(code)))
